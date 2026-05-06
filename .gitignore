@@ -1,0 +1,20 @@
+# Entorno virtual
+venv/
+ENV/
+env/
+
+# Variables de entorno (Seguridad)
+.env
+
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Archivos generados
+*.epub
+outputs/
+
+# Sistema
+.DS_Store
+Thumbs.db

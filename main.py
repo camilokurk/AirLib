@@ -1,0 +1,61 @@
+import os
+import base64
+from fastapi import FastAPI, File, UploadFile
+import uvicorn
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+
+app = FastAPI()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def clean_json(transcription):
+    return transcription.replace("```json", "").replace("```", "").strip()
+
+@app.post('/epub')
+async def transcribe_image(file: UploadFile = File(...)):
+    file_content = await file.read()
+    
+    base64_image = base64.b64encode(file_content).decode('utf-8')
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": """
+                                                Actúa como un transcriptor experto de libros. Analiza la imagen y devuelve únicamente un objeto JSON con la siguiente estructura:
+
+                                                1. 'titulo': Un nombre breve y representativo que identifique el texto.
+                                                2. 'contenido': Una transcripción 100% fiel y literal del texto de la imagen. Debes mantener los párrafos exactamente como están, respetar cada signo de puntuación y conservar el estilo original.
+
+                                                Reglas de formato obligatorias:
+                                                - Usa etiquetas HTML básicas (<p>, <b>, <i>) dentro del campo 'contenido' para maquetar el texto.
+                                                - No incluyas etiquetas estructurales como <html>, <body> o <!DOCTYPE>.
+                                                - No añadas comentarios ni texto extra fuera del JSON. 
+                                                - La finalidad es que el contenido pueda leerse de corrido como un libro digital profesional.
+                     
+                                                IMPORTANTE: Si al final de una línea en la imagen una palabra está cortada por un guion (ej: 'correspon-'),
+                                                debes unir la palabra completa ('corresponder') y eliminar el guion de corte. El texto debe fluir de forma continua,
+                                                sin cortes de línea artificiales que dependan del formato físico del libro original
+                                                """},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        },
+                    },
+                ],
+            }
+        ],
+    )
+
+    return {"transcription": response.choices[0].message.content}
+
+async def create_epub(pages, title):
+    return
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="127.0.0.1", port=8000)
