@@ -1,9 +1,14 @@
+import io
+import json
 import os
 import base64
 from fastapi import FastAPI, File, UploadFile
 import uvicorn
 from dotenv import load_dotenv
 from openai import OpenAI
+import ebooklib
+from ebooklib import epub
+from fastapi.responses import StreamingResponse
 
 load_dotenv()
 
@@ -52,10 +57,29 @@ async def transcribe_image(file: UploadFile = File(...)):
         ],
     )
 
-    return {"transcription": response.choices[0].message.content}
+    clean_text = clean_json(response.choices[0].message.content) 
+
+    final_text = json.loads(clean_text)
+
+    buffer = await create_epub(final_text["contenido"], final_text["titulo"])
+    
+    return StreamingResponse(buffer, media_type="application/epub+zip")
 
 async def create_epub(pages, title):
-    return
+    
+    book = epub.EpubBook()
+    book.set_identifier("bookscan-1")
+    book.set_title(title) 
+    chapter = epub.EpubHtml(title=title, file_name='pagina.xhtml')
+    chapter.content = pages
+    book.add_item(chapter)
+    book.spine = ['nav', chapter]
+
+    buffer = io.BytesIO()
+    epub.write_epub(buffer, book)
+    buffer.seek(0)
+   
+    return buffer
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
