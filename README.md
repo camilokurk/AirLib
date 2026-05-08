@@ -1,4 +1,4 @@
-# 📚 AirLib
+# 📖 AirLib
 
 AirLib is a personal tool to convert physical book pages into EPUBs you can read on your phone. It's built for a very specific use case: you want to read a book during short moments of the day without carrying it around.
 
@@ -64,12 +64,35 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ```bash
 curl -X POST http://<your-server-ip>:8000/epub \
   -F "file=@page.jpg" \
+  -F "book_title=My Book" \
   -o fragment.epub
 ```
 
-### From your phone
+### From iPhone (Apple Shortcuts)
 
-You can use any HTTP client app to send the photos and receive the EPUB. On iPhone, Shortcuts works well for this. On Android, HTTP Shortcuts is a good option.
+AirLib works well with the Apple Shortcuts app, which can send photos directly to the server and open the resulting EPUB in Apple Books.
+
+A basic Shortcut looks like this:
+
+1. **Ask for input** — prompt for the book title
+2. **Select photos** — pick the pages you want to read (select multiple)
+3. **Convert image** — convert each photo to JPEG (iPhones shoot in HEIC by default, which is not supported by OpenAI)
+4. **Get contents of URL** — POST to `http://<your-server-ip>:8000/epub` with:
+   - Method: POST
+   - Body: Multipart Form
+   - Field `book_title`: the title from step 1
+   - Field `file`: the converted photo(s)
+5. **Set name** — rename the result to `<title>.epub`
+6. **Save file** — save to Files or iCloud
+7. **Open file** — open in Apple Books
+
+> **Note:** iPhones shoot in HEIC format. Make sure to convert photos to JPEG before sending, otherwise OpenAI will reject them.
+
+> **Multi-image support via Shortcuts is a work in progress.** Currently, Shortcuts has limitations when sending multiple files in a single multipart request. Single-image scanning works reliably end-to-end.
+
+### From Android
+
+HTTP Shortcuts is a good alternative to Apple Shortcuts on Android.
 
 ---
 
@@ -80,7 +103,7 @@ You can use any HTTP client app to send the photos and receive the EPUB. On iPho
 | Backend | Python + FastAPI |
 | OCR & formatting | OpenAI GPT-4o Vision |
 | EPUB generation | ebooklib |
-| Client | Any HTTP client → any EPUB reader |
+| Client | Apple Shortcuts → Apple Books |
 
 ---
 
@@ -89,6 +112,7 @@ You can use any HTTP client app to send the photos and receive the EPUB. On iPho
 - Requires a running server — does not work offline
 - Transcription quality depends on photo quality (good lighting, flat page)
 - Uses the OpenAI API, which has a cost (minimal for this use — cents per session)
+- Multi-image support via Shortcuts is currently limited by how the app handles multipart form requests
 - This is a personal tool for occasional, private use
 
 ---
