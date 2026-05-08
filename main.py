@@ -1,8 +1,9 @@
 import io
+from uuid import uuid4
 import json
 import os
 import base64
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Form
 from typing import List
 import uvicorn
 from dotenv import load_dotenv
@@ -20,8 +21,8 @@ def clean_json(transcription):
     return transcription.replace("```json", "").replace("```", "").strip()
 
 @app.post('/epub')
-async def transcribe_image(file: List[UploadFile] = File(...)):
-
+async def transcribe_image(file: List[UploadFile] = File(...), book_title: str = Form("Fragmento AirLib")):
+    print(len(file))
     content = []
 
     for i in file:
@@ -31,7 +32,8 @@ async def transcribe_image(file: List[UploadFile] = File(...)):
 
         response = client.chat.completions.create(
             model="gpt-4o",
-            messages=[
+            response_format={"type": "json_object"},
+            messages=[  
                 {
                     "role": "user",
                     "content": [
@@ -75,8 +77,7 @@ async def transcribe_image(file: List[UploadFile] = File(...)):
 async def create_epub(pages, title):
     
     book = epub.EpubBook()
-    book.set_identifier("bookscan-1")
-    book.set_title(title) 
+    book.set_identifier(book.set_identifier(str(uuid4()))) 
     chapter = epub.EpubHtml(title=title, file_name='pagina.xhtml')
     chapter.content = "".join(pages)
     book.add_item(chapter)
@@ -89,4 +90,4 @@ async def create_epub(pages, title):
     return buffer
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
