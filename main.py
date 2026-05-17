@@ -20,6 +20,11 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def clean_json(transcription):
     return transcription.replace("```json", "").replace("```", "").strip()
 
+sessions = {}
+
+@app.post('/transcribe')
+async def transcribe(file: List[UploadFile] = File(...), book_title: str = Form(None)):
+
 @app.post('/epub')
 async def transcribe_image(file: List[UploadFile] = File(...), book_title: str = Form("Fragmento AirLib")):
     print(len(file))
@@ -77,7 +82,7 @@ async def transcribe_image(file: List[UploadFile] = File(...), book_title: str =
 async def create_epub(pages, title):
     
     book = epub.EpubBook()
-    book.set_identifier(book.set_identifier(str(uuid4()))) 
+    book.set_identifier(str(uuid4())) 
     chapter = epub.EpubHtml(title=title, file_name='pagina.xhtml')
     chapter.content = "".join(pages)
     book.add_item(chapter)
