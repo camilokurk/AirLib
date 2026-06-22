@@ -24,6 +24,7 @@ sessions = {}
 
 @app.post('/transcribe')
 async def transcribe(file: List[UploadFile] = File(...), book_title: str = Form(None)):
+    
 
 @app.post('/epub')
 async def transcribe_image(file: List[UploadFile] = File(...), book_title: str = Form("Fragmento AirLib")):
@@ -46,7 +47,7 @@ async def transcribe_image(file: List[UploadFile] = File(...), book_title: str =
                                                     Actúa como un transcriptor experto de libros. Analiza la imagen y devuelve únicamente un objeto JSON con la siguiente estructura:
 
                                                     1. 'titulo': Un nombre breve y representativo que identifique el texto.
-                                                    2. 'contenido': Una transcripción 100% fiel y literal del texto de la imagen. Debes mantener los párrafos exactamente como están, respetar cada signo de puntuación y conservar el estilo original.
+                                                    2. 'contenido': Una transcripción 100 porciento fiel y literal del texto de la imagen. Debes mantener los párrafos exactamente como están, respetar cada signo de puntuación y conservar el estilo original.
 
                                                     Reglas de formato obligatorias:
                                                     - Usa etiquetas HTML básicas (<p>, <b>, <i>) dentro del campo 'contenido' para maquetar el texto.
