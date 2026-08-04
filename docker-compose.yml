@@ -1,0 +1,8 @@
+services:
+  airlib:
+    build: .
+    ports:
+      - "2010:2010"
+    env_file:
+      - .env
+    restart: unless-stopped

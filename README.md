@@ -55,7 +55,7 @@ OPENAI_API_KEY=sk-...
 Start the server:
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn main:app --host 0.0.0.0 --port 2010
 ```
 
 ---
@@ -65,7 +65,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 ### From the terminal
 
 ```bash
-curl -X POST http://<your-server-ip>:8000/epub \
+curl -X POST http://<your-server-ip>:2010/epub \
   -F "file=@pages.zip" \
   -F "book_title=My Book" \
   -o fragment.epub
@@ -83,7 +83,7 @@ A basic Shortcut looks like this:
 2. **Select photos** — pick the pages you want to read (select multiple)
 3. **Repeat with each** photo → **Convert image** to JPEG (iPhones shoot in HEIC by default, which is not supported by OpenAI)
 4. **Make Archive** — zip the results of the repeat step into a single `.zip` file
-5. **Get contents of URL** — POST to `http://<your-server-ip>:8000/epub` with:
+5. **Get contents of URL** — POST to `http://<your-server-ip>:2010/epub` with:
    - Method: POST
    - Body: Form
    - Field `book_title` (type Text): the title from step 1
@@ -129,6 +129,9 @@ HTTP Shortcuts is a good alternative to Apple Shortcuts on Android.
 airlib/
 ├── main.py
 ├── requirements.txt
+├── dockerfile
+├── docker-compose.yml
+├── .dockerignore
 ├── .env.example  # copy to .env and fill in your key
 ├── .env          # do not commit
 └── README.md
