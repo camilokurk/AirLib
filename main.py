@@ -1,10 +1,10 @@
 import io
+import zipfile
 from uuid import uuid4
 import json
 import os
 import base64
 from fastapi import FastAPI, File, UploadFile, Form
-from typing import List
 import uvicorn
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -17,48 +17,49 @@ load_dotenv()
 app = FastAPI()
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png")
+
 def clean_json(transcription):
     return transcription.replace("```json", "").replace("```", "").strip()
 
-sessions = {}
-
-@app.post('/transcribe')
-async def transcribe(file: List[UploadFile] = File(...), book_title: str = Form(None)):
-    
-
 @app.post('/epub')
-async def transcribe_image(file: List[UploadFile] = File(...), book_title: str = Form("Fragmento AirLib")):
-    print(len(file))
+async def transcribe_image(file: UploadFile = File(...), book_title: str = Form("Fragmento AirLib")):
+    zip_bytes = await file.read()
+    zip_file = zipfile.ZipFile(io.BytesIO(zip_bytes))
+
+    image_names = [
+        name for name in zip_file.namelist()
+        if not name.endswith('/') and name.lower().endswith(IMAGE_EXTENSIONS)
+    ]
+
     content = []
 
-    for i in file:
-        file_content = await i.read()
-        
-        base64_image = base64.b64encode(file_content).decode('utf-8')
+    for name in image_names:
+        base64_image = base64.b64encode(zip_file.read(name)).decode('utf-8')
 
         response = client.chat.completions.create(
             model="gpt-4o",
             response_format={"type": "json_object"},
-            messages=[  
+            messages=[
                 {
                     "role": "user",
                     "content": [
                         {"type": "text", "text": """
-                                                    Actúa como un transcriptor experto de libros. Analiza la imagen y devuelve únicamente un objeto JSON con la siguiente estructura:
+                            Actúa como un transcriptor experto de libros. Analiza la imagen y devuelve únicamente un objeto JSON con la siguiente estructura:
 
-                                                    1. 'titulo': Un nombre breve y representativo que identifique el texto.
-                                                    2. 'contenido': Una transcripción 100 porciento fiel y literal del texto de la imagen. Debes mantener los párrafos exactamente como están, respetar cada signo de puntuación y conservar el estilo original.
+                            1. 'titulo': Un nombre breve y representativo que identifique el texto.
+                            2. 'contenido': Una transcripción 100 porciento fiel y literal del texto de la imagen. Debes mantener los párrafos exactamente como están, respetar cada signo de puntuación y conservar el estilo original.
 
-                                                    Reglas de formato obligatorias:
-                                                    - Usa etiquetas HTML básicas (<p>, <b>, <i>) dentro del campo 'contenido' para maquetar el texto.
-                                                    - No incluyas etiquetas estructurales como <html>, <body> o <!DOCTYPE>.
-                                                    - No añadas comentarios ni texto extra fuera del JSON. 
-                                                    - La finalidad es que el contenido pueda leerse de corrido como un libro digital profesional.
-                        
-                                                    IMPORTANTE: Si al final de una línea en la imagen una palabra está cortada por un guion (ej: 'correspon-'),
-                                                    debes unir la palabra completa ('corresponder') y eliminar el guion de corte. El texto debe fluir de forma continua,
-                                                    sin cortes de línea artificiales que dependan del formato físico del libro original
-                                                    """},
+                            Reglas de formato obligatorias:
+                            - Usa etiquetas HTML básicas (<p>, <b>, <i>) dentro del campo 'contenido' para maquetar el texto.
+                            - No incluyas etiquetas estructurales como <html>, <body> o <!DOCTYPE>.
+                            - No añadas comentarios ni texto extra fuera del JSON.
+                            - La finalidad es que el contenido pueda leerse de corrido como un libro digital profesional.
+
+                            IMPORTANTE: Si al final de una línea en la imagen una palabra está cortada por un guion (ej: 'correspon-'),
+                            debes unir la palabra completa ('corresponder') y eliminar el guion de corte. El texto debe fluir de forma continua,
+                            sin cortes de línea artificiales que dependan del formato físico del libro original
+                            """},
                         {
                             "type": "image_url",
                             "image_url": {
@@ -70,20 +71,17 @@ async def transcribe_image(file: List[UploadFile] = File(...), book_title: str =
             ],
         )
 
-        clean_text = clean_json(response.choices[0].message.content) 
-
+        clean_text = clean_json(response.choices[0].message.content)
         final_text = json.loads(clean_text)
-
         content.append(final_text["contenido"])
 
-    buffer = await create_epub(content, final_text["titulo"])
-    
+    buffer = await create_epub(content, book_title)
+
     return StreamingResponse(buffer, media_type="application/epub+zip")
 
 async def create_epub(pages, title):
-    
     book = epub.EpubBook()
-    book.set_identifier(str(uuid4())) 
+    book.set_identifier(str(uuid4()))
     chapter = epub.EpubHtml(title=title, file_name='pagina.xhtml')
     chapter.content = "".join(pages)
     book.add_item(chapter)
@@ -92,7 +90,7 @@ async def create_epub(pages, title):
     buffer = io.BytesIO()
     epub.write_epub(buffer, book)
     buffer.seek(0)
-   
+
     return buffer
 
 if __name__ == "__main__":
