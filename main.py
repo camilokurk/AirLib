@@ -78,6 +78,7 @@ async def build_epub(contenido: List[str] = Form(...), book_title: str = Form("F
 async def create_epub(pages, title):
     book = epub.EpubBook()
     book.set_identifier(str(uuid4()))
+    book.add_author("AirLib")
     chapter = epub.EpubHtml(title=title, file_name='pagina.xhtml')
     chapter.content = "".join(pages)
     book.add_item(chapter)
