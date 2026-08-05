@@ -40,8 +40,8 @@ Photos are sent one per request instead of all at once because Apple Shortcuts c
 ## Installation
 
 ```bash
-git clone https://github.com/yourusername/airlib
-cd airlib
+git clone https://github.com/camilokurk/AirLib
+cd AirLib
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
@@ -138,7 +138,7 @@ HTTP Shortcuts is a good alternative to Apple Shortcuts on Android.
 airlib/
 ├── main.py
 ├── requirements.txt
-├── dockerfile
+├── Dockerfile
 ├── docker-compose.yml
 ├── .dockerignore
 ├── .env.example  # copy to .env and fill in your key

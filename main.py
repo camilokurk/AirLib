@@ -8,7 +8,6 @@ from fastapi import FastAPI, File, HTTPException, UploadFile, Form
 import uvicorn
 from dotenv import load_dotenv
 from openai import OpenAI
-import ebooklib
 from ebooklib import epub
 from fastapi.responses import StreamingResponse
 
